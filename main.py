@@ -46,7 +46,10 @@ def login():
         conn.close()
         return
     salt, password_hash, failed_attempts, is_locked = result
-    if is_locked:
+    cursor.execute('SELECT value FROM settings WHERE setting_name = ?', ('lockout_enabled',))
+    lockout_enabled = cursor.fetchone()[0]
+
+    if lockout_enabled and is_locked:
         print("Account is locked due to too many failed login attempts.")
         conn.close()
         return
@@ -64,9 +67,34 @@ def login():
             print('Account Locked!')
     conn.commit()
     conn.close()
-
+def create_settings_table():
+    conn = sqlite3.connect('brute_force.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            setting_name TEXT PRIMARY KEY,
+            value INTEGER DEFAULT 1
+        )
+    ''')
+    # Default: lockout enabled
+    cursor.execute('INSERT OR IGNORE INTO settings (setting_name, value) VALUES (?, ?)', 
+                   ('lockout_enabled', 1))
+    conn.commit()
+    conn.close()
+def toggle_lockout():
+    conn = sqlite3.connect('brute_force.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT value FROM settings WHERE setting_name = ?', ('lockout_enabled',))
+    current = cursor.fetchone()[0]
+    new_value = 0 if current == 1 else 1
+    cursor.execute('UPDATE settings SET value = ? WHERE setting_name = ?', 
+                   (new_value, 'lockout_enabled'))
+    conn.commit()
+    conn.close()
+    print(f"Lockout Protection: {'ON' if new_value == 1 else 'OFF'}")
 if __name__ == "__main__":
     create_database()
+    create_settings_table()
     # registration()
     login()     
         
