@@ -1,6 +1,8 @@
 import sqlite3
 import os
 import hashlib
+from header import show_intro
+show_intro()
 def create_database():
     conn = sqlite3.connect('brute_force.db')
     cursor = conn.cursor()
@@ -92,9 +94,32 @@ def toggle_lockout():
     conn.commit()
     conn.close()
     print(f"Lockout Protection: {'ON' if new_value == 1 else 'OFF'}")
+def menu():
+    while True:
+        print("[1] Register")
+        print("[2] Login")
+        print("\n--- ADMIN/DEMO PANEL ---")
+        print("[3] Toggle Lockout Protection")
+        print("[4] Launch Attack")
+        print("\n[5] Exit")
+        print("==============================")
+        
+        choice = input("Enter choice: ")
+        
+        if choice == '1':
+            registration()
+        elif choice == '2':
+            login()
+        elif choice == '3':
+            toggle_lockout()
+        elif choice == '4':
+            print("Attack module — coming soon!")
+        elif choice == '5':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice!")
+
 if __name__ == "__main__":
-    create_database()
-    create_settings_table()
-    # registration()
-    login()     
+    menu()  
         
