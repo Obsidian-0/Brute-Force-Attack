@@ -2,6 +2,7 @@ import sqlite3
 import os
 import hashlib
 from header import show_intro
+import time
 show_intro()
 def create_database():
     conn = sqlite3.connect('brute_force.db')
@@ -94,6 +95,39 @@ def toggle_lockout():
     conn.commit()
     conn.close()
     print(f"Lockout Protection: {'ON' if new_value == 1 else 'OFF'}")
+def Attack():
+    target = input("Enter target username: ")
+    conn = sqlite3.connect('brute_force.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT salt, password_hash FROM users WHERE username = ?', (target,))
+    result = cursor.fetchone() 
+    conn.close()
+    if result is None:
+        print("User not found.")
+        return
+    salt,password_hash = result
+    print(f"[+] Target found! Starting brute force attack...")
+    attempts = 0
+    start_time = time.time()
+    with open('rockyou.txt', 'r', encoding='latin-1') as f:
+        for line in f:
+            line = line.strip()
+            computed_hash = hashlib.sha256(line.encode() + bytes.fromhex(salt)).hexdigest()
+            attempts += 1
+            if computed_hash == password_hash:
+                end_time = time.time()
+                elapsed = round(end_time - start_time, 2)
+                print(f"[+] Password found: {line} (Attempts: {attempts})")
+                print(f"Time taken: {elapsed} seconds")
+                with open('attack_log.txt', 'a') as log:
+                    log.write(f"Target: {target}, Password: {line}, Attempts: {attempts}, Time: {elapsed} seconds\n")
+                return
+    elapsed = round(time.time() - start_time, 2)
+    print(f"[-] Password not found after {attempts} attempts.")
+    print(f"Time taken: {elapsed} seconds")
+    with open('attack_log.txt', 'a') as log:
+        log.write(f"Target: {target}, Password not found, Attempts: {attempts}, Time: {elapsed} seconds\n")
+
 def menu():
     while True:
         print("[1] Register")
@@ -113,7 +147,7 @@ def menu():
         elif choice == '3':
             toggle_lockout()
         elif choice == '4':
-            print("Attack module — coming soon!")
+            Attack()
         elif choice == '5':
             print("Goodbye!")
             break
@@ -121,5 +155,7 @@ def menu():
             print("Invalid choice!")
 
 if __name__ == "__main__":
+    create_database()
+    create_settings_table()
     menu()  
         
