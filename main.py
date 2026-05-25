@@ -106,6 +106,10 @@ def Attack():
         print("User not found.")
         return
     salt,password_hash = result
+    print("[*] Accessing target database...")
+    print("[*] Extracting user credentials...")
+    print(f"[+] Salt extracted: {salt}")
+    print(f"[+] Hash extracted: {password_hash}")
     print(f"[+] Target found! Starting brute force attack...")
     attempts = 0
     start_time = time.time()
@@ -114,17 +118,19 @@ def Attack():
             line = line.strip()
             computed_hash = hashlib.sha256(line.encode() + bytes.fromhex(salt)).hexdigest()
             attempts += 1
+            print(f"[-] Trying : {line}",end ='\r',flush=True)
             if computed_hash == password_hash:
+                print("===============CRACKED!===============")
                 end_time = time.time()
                 elapsed = round(end_time - start_time, 2)
                 print(f"[+] Password found: {line} (Attempts: {attempts})")
-                print(f"Time taken: {elapsed} seconds")
+                print(f"[+] Time : {elapsed} seconds")
                 with open('attack_log.txt', 'a') as log:
                     log.write(f"Target: {target}, Password: {line}, Attempts: {attempts}, Time: {elapsed} seconds\n")
                 return
     elapsed = round(time.time() - start_time, 2)
     print(f"[-] Password not found after {attempts} attempts.")
-    print(f"Time taken: {elapsed} seconds")
+    print(f"[-] Time : {elapsed} seconds")
     with open('attack_log.txt', 'a') as log:
         log.write(f"Target: {target}, Password not found, Attempts: {attempts}, Time: {elapsed} seconds\n")
 
