@@ -1,6 +1,7 @@
 venv/
 brute_force.db
 attack_log.txt
+rockyou.txt
 __pycache__/
 *.pyc
 .vscode/
