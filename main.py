@@ -3,6 +3,13 @@ import os
 import hashlib
 from header import show_intro
 import time
+import sys
+import sys
+
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(os.path.abspath(__file__))
 show_intro()
 def create_database():
     conn = sqlite3.connect('brute_force.db')
@@ -134,7 +141,8 @@ def Attack():
     print(f"[+] Target found! Starting brute force attack...")
     attempts = 0
     start_time = time.time()
-    with open('rockyou.txt', 'r', encoding='latin-1') as f:
+    rockyou_path = os.path.join(base_path, 'rockyou.txt')
+    with open(rockyou_path, 'r', encoding='latin-1') as f:
         for line in f:
             if attempts >= max_attempts:
                 print("[-] Attack stopped — Lockout protection triggered!")
