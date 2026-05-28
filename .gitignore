@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 .vscode/
 __pycache__/rockyou.txt
+build/
+dist/
+main.spec
