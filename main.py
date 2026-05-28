@@ -49,17 +49,15 @@ def login():
         conn.close()
         return
     salt, password_hash, failed_attempts, is_locked = result
-    cursor.execute('SELECT value FROM settings WHERE setting_name = ?', ('lockout_enabled',))
-    lockout_enabled = cursor.fetchone()[0]
-
-    if lockout_enabled and is_locked:
+    if   is_locked:
         print("Account is locked due to too many failed login attempts.")
         conn.close()
         return
     salt_bytes = bytes.fromhex(salt)
     computed_hash = hashlib.sha256(password.encode()+ salt_bytes).hexdigest()
     if computed_hash == password_hash:
-        print("Login Sexcessfull")
+        print("Login successful")
+        print(f"Welcome {user}!")
         cursor.execute('Update users set failed_attempts = 0 where username =?',(user,))
     else:
         failed_attempts +=1
@@ -70,6 +68,20 @@ def login():
             print('Account Locked!')
     conn.commit()
     conn.close()
+def unlock_user():
+    user = input("Enter username to unlock: ")
+    conn = sqlite3.connect('brute_force.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT username FROM users WHERE username = ?', (user,))
+    result = cursor.fetchone()
+    if result is None:
+        print("User not found!")
+        conn.close()
+        return
+    cursor.execute('UPDATE users SET is_locked = 0, failed_attempts = 0 WHERE username = ?', (user,))
+    conn.commit()
+    conn.close()
+    print(f"[+] User '{user}' unlocked successfully!")
 def create_settings_table():
     conn = sqlite3.connect('brute_force.db')
     cursor = conn.cursor()
@@ -101,11 +113,20 @@ def Attack():
     cursor = conn.cursor()
     cursor.execute('SELECT salt, password_hash FROM users WHERE username = ?', (target,))
     result = cursor.fetchone() 
-    conn.close()
+    
     if result is None:
         print("User not found.")
         return
     salt,password_hash = result
+    cursor.execute('SELECT value FROM settings WHERE setting_name = ?', ('lockout_enabled',))
+    lockout_enabled = cursor.fetchone()[0]
+    conn.close()
+    if lockout_enabled:
+        print("[!] Lockout Protection is ON — Attack limited to 5 attempts!")
+        max_attempts = 5
+    else:
+        print("[!] Lockout Protection is OFF — Unlimited attempts!")
+        max_attempts = float('inf')
     print("[*] Accessing target database...")
     print("[*] Extracting user credentials...")
     print(f"[+] Salt extracted: {salt}")
@@ -115,6 +136,9 @@ def Attack():
     start_time = time.time()
     with open('rockyou.txt', 'r', encoding='latin-1') as f:
         for line in f:
+            if attempts >= max_attempts:
+                print("[-] Attack stopped — Lockout protection triggered!")
+                return
             line = line.strip()
             computed_hash = hashlib.sha256(line.encode() + bytes.fromhex(salt)).hexdigest()
             attempts += 1
@@ -141,7 +165,8 @@ def menu():
         print("\n--- ADMIN/DEMO PANEL ---")
         print("[3] Toggle Lockout Protection")
         print("[4] Launch Attack")
-        print("\n[5] Exit")
+        print("[5] Unlock User")
+        print("\n[6] Exit")
         print("==============================")
         
         choice = input("Enter choice: ")
@@ -154,7 +179,9 @@ def menu():
             toggle_lockout()
         elif choice == '4':
             Attack()
-        elif choice == '5':
+        elif choice =='5':
+            unlock_user()
+        elif choice == '6':
             print("Goodbye!")
             break
         else:
